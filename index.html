@@ -149,7 +149,7 @@ shareColors()
     }
 
     function onEachFeature(feature, layer) {
-        layer.bindPopup("2018 Primary </br>" + "Ward Number: " + feature.properties.WARD[1] + "</br>" + feature.properties.NAME + "</br>" + "Registered Voters: " + feature.properties.REGISTERED_DEMS[3] + "</br>" +
+        layer.bindPopup("2018 Primary </br>" + "Ward Number: " + feature.properties.WARD[1] + "</br>" + feature.properties.NAME + "</br>" + "Registered Dems: " + feature.properties.REGISTERED_DEMS[3] + "</br>" +
 			"Total D Votes: " + feature.properties.VOTES[3] + "</br>" + "Turnout: " + feature.properties.TURNOUT[3] + "% </br>" + 
 			"Share of Total Vote: " + feature.properties.VOTESHARE[3] + "</br>");
         }
