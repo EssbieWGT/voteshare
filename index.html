@@ -168,12 +168,10 @@ var layer = new L.StamenTileLayer("toner-lite");
 var map = new L.Map("resultsMap", {
           center: new L.LatLng(38.92, -77.03),
           zoom: 12,
-          layers: registered
+          layers: turnedout
         });
 map.addLayer(layer);
     map.addLayer(wards)
-    map.addLayer(registered)
-    map.addLayer(voteshare)
     map.addLayer(turnedout)
 
 var overlayMaps = {
