@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css"
+ integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
+ crossorigin=""/>
+ <link rel="stylesheet" href="https://cdn.rawgit.com/socib/Leaflet.TimeDimension/master/dist/leaflet.timedimension.control.min.css" />
+<script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"
+ integrity="sha512-nMMmRyTVoLYqjP9hrbed9S+FzjZHW5gY1TWCHA5ckwXZBadntCNs8kEqAWdrb9O7rxbCaA4lKTIWjDXZxflOcA=="
+ crossorigin=""></script>
+ <script type="text/javascript" src="https://cdn.rawgit.com/nezasa/iso8601-js-period/master/iso8601.min.js"></script>
+<script type="text/javascript" src="https://cdn.rawgit.com/socib/Leaflet.TimeDimension/master/dist/leaflet.timedimension.min.js"></script>
+<script src="https://d3js.org/d3.v4.js"></script>
+<script type="text/javascript" src="https://stamen-maps.a.ssl.fastly.net/js/tile.stamen.js"></script>
+
+<style>
+
+   #resultsMap {
+    height: 100vh;
+    width: 100vw;
+   }
+
+   .info {
+       padding: 6px 8px;
+       font: 14px/16px Arial, Helvetica, sans-serif;
+       color: #777;
+       text-align: right;
+       background: white;
+       box-shadow: 0 0 15px rgba(0,0,0,0.2);
+       border-radius: 5px;
+   }
+   .info h4 {
+       margin: 0 0 5px;
+       color: #777;
+   }
+
+</style>
+
+<head>
+   <title> DC Primaries Since 2012 </title>
+	</head>
+
+<body>
+
+<div id="resultsMap"></div>
+
+<script>
+//load and process the data
+d3.queue()
+  .defer(d3.csv, "voteData.csv")
+  .defer(d3.json, "https://opendata.arcgis.com/datasets/0ef47379cbae44e88267c01eaec2ff6e_31.geojson")
+  .defer(d3.json, "https://opendata.arcgis.com/datasets/44cdf2570d8545dd9c9868e2a2f570c8_27.geojson")
+  .await(analyze);
+
+function analyze(error, results, ward, precinct) {
+  if(error) { console.log(error); }
+
+var numberPattern = /\d+/g;
+
+  precinct.features.forEach(function(feat) {
+      var result = results.filter(function(result) {
+          return result.PRECINCT_NUMBER === feat.properties.NAME.match(numberPattern).toString();
+      });
+      feat.properties.WARD = result.map(x => x.WARD)
+      feat.properties.VOTES = result.map(x => x.VOTES)
+      feat.properties.TURNOUT = result.map(x => x.TURNOUT*100)
+      feat.properties.VOTESHARE = result.map(x => x.TOTALSHARE)
+      feat.properties.REGISTERED_DEMS = result.map(x => x['REGISTERED VOTERS - DEMOCRATIC'])
+      feat.properties.YEAR = results.map(x => x.ELECTION_DATE)
+
+  });
+
+
+    //define styles
+
+    function styleWard(feature) {
+        return {
+            weight: 2,
+            opacity: 1,
+            stroke: true,
+            color: "black",
+            fillOpacity: 0
+        }
+    };
+        //define styles
+        function stylePre(feature) {
+            return {
+                fillColor: numColors(feature.properties.REGISTERED_DEMS[3]),
+                weight: 0,
+                opacity: 0,
+                stroke: false,
+                fillOpacity: 0.5
+            }
+
+    };
+
+    function styleShare(feature) {
+        return {
+            fillColor: shareColors(feature.properties.VOTESHARE[3]),
+            weight: 0,
+            opacity: 0,
+            stroke: false,
+            fillOpacity: 0.5
+        }
+      };
+
+      function styleTurnout(feature) {
+          return {
+              fillColor: percentColors(feature.properties.TURNOUT[3]),
+              weight: 0,
+              opacity: 0,
+              stroke: false,
+              fillOpacity: 0.5
+          }
+        };
+
+numColors()
+  function numColors(d){
+     return d > 4000 ? 'rgb(8,81,156,0.8)':
+            d > 3000 ? 'rgb(49,130,189,0.8)':
+            d > 2000 ? 'rgb(107,174,214,0.8)':
+            d > 1000 ? 'rgb(189,215,231,0.8)':
+            d > 0 ? 'rgb(239,243,255,0.8)':
+              'rgba(0,0,0,0.0)';
+}
+
+percentColors()
+function percentColors(d){
+   return d > 40 ? 'rgb(8,81,156)':
+          d > 30 ? 'rgb(49,130,189)':
+          d > 20 ? 'rgb(107,174,214)':
+          d > 10 ? 'rgb(189,215,231)':
+          d > 0  ? 'rgb(239,243,255)':
+            'rgba(0,0,0,0.0)';
+  }
+
+shareColors()
+    //define colors. Could only get it to work right in descending order
+    function shareColors(d) {
+        return d > 0.4  ? 'rgb(8,81,156)':
+               d > 0.3   ? 'rgb(49,130,189)':
+               d > 0.2  ? 'rgb(107,174,214)':
+               d > 0.1  ? 'rgb(189,215,231)':
+               d > 0    ? 'rgb(239,243,255)':
+                 'rgba(0,0,0,0.0)';
+    }
+
+    function onEachFeature(feature, layer) {
+        layer.bindPopup("2018 Primary </br>" + "Ward Number: " + feature.properties.WARD[1] + "</br>" + feature.properties.NAME + "</br>" + "Total D Votes: " + feature.properties.VOTES[3] + "</br>" +
+         "Turnout: " + feature.properties.TURNOUT[3] + "% </br>" + "Share of Total Vote: " + feature.properties.VOTESHARE[3] + "</br>");
+        }
+
+var wards = new L.geoJson(ward, {style: styleWard, smoothFactor: 0.25})
+
+var registered = new L.geoJson(precinct, {style: stylePre, smoothFactor: 0.25, onEachFeature: onEachFeature})
+
+var voteshare = new L.geoJson(precinct, {style: styleShare, smoothFactor: 0.25, onEachFeature: onEachFeature})
+
+var turnedout =  new L.geoJson(precinct, {style: styleTurnout, smoothFactor: 0.25, onEachFeature: onEachFeature})
+
+
+//create map and add statment tiles
+
+var layer = new L.StamenTileLayer("toner-lite");
+var map = new L.Map("resultsMap", {
+          center: new L.LatLng(38.92, -77.03),
+          zoom: 12,
+          layers: registered
+        });
+map.addLayer(layer);
+    map.addLayer(wards)
+    map.addLayer(registered)
+    map.addLayer(voteshare)
+    map.addLayer(turnedout)
+
+var overlayMaps = {
+    "Registered Voters": registered,
+    "Share of Total Vote": voteshare,
+    "Voter Turnout": turnedout,
+        };
+
+L.control.layers(overlayMaps).addTo(map);
+
+}
+
+</script>
+
+</body>
