@@ -165,8 +165,7 @@ var turnedout =  new L.geoJson(precinct, {style: styleTurnout, smoothFactor: 0.2
 var layer = new L.StamenTileLayer("toner-lite");
 var map = new L.Map("resultsMap", {
           center: new L.LatLng(38.92, -77.03),
-          zoom: 12,
-          layers: [turnedout]
+          zoom: 12
         });
 map.addLayer(layer);
     map.addLayer(wards)
